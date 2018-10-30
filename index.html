@@ -1,0 +1,188 @@
+<html>
+  <head>
+    <title>Canvas test</title>
+    <style>
+      #canvas {
+        border: solid 1px black;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas style="height: 500px; width: 500px;" id="canvas"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas');
+      canvas.height = 500;
+      canvas.width = 500;
+      const ctx = canvas.getContext("2d");
+
+      /**
+       * Create some test points to use for the boat
+       * and the lines.
+       */
+      
+      const test1PointX = getRandomNum(),
+            test1PointY = getRandomNum(),
+            lineX1 = 200,
+            lineY1 = 137,
+            lineX2 = 200,
+            lineY2 = 400;
+      
+      /**
+       * Init the test harness.
+       */
+      
+      performTestHarness(test1PointX, test1PointY, lineX1, lineY1, lineX2, lineY2)
+
+      /**
+       * @func performTestHarness
+       * @desc Actually performs the test, draws on canvas and prints result.
+       */
+
+      function performTestHarness(test1PointX, test1PointY, lineX1, lineY1, lineX2, lineY2) {
+        const distanceFromGuideline = calcDistanceFromLine(test1PointX, test1PointY, lineX1, lineY1, lineX2, lineY2)
+        console.log(`Test: 
+
+        PointX = ${test1PointX}
+        PointY = ${test1PointY}
+        LineX1 = ${lineX1}
+        LineY1 = ${lineY1}
+        LineX2 = ${lineX2}
+        LineY2 = ${lineY2}
+
+        The distance from the line is = ${
+          JSON.stringify(distanceFromGuideline)
+        }`);
+
+        // compute cross track error stuff
+        const guidelineHeading = drawLine(lineX1, lineY1, lineX2, lineY2);
+        const boatHeading = drawBoat(test1PointX, test1PointY);
+
+        const heading = IEEERemainer((boatHeading - guidelineHeading), 360.0);
+        let xte = distanceFromGuideline.distance;
+
+        if (Math.abs(heading) > 90) {
+          xte *= -1
+        }
+
+        console.log(`==================
+Cross track error = ${xte}
+HG                = ${guidelineHeading}
+BH                = ${boatHeading}
+`)
+      }
+
+      function drawBoat (pointX, pointY) {
+        var radius = 30;
+        // define random distance between inner/outer rings
+        var distFromCenter = radius+Math.random()*(radius*2);
+        // define random angle
+        var bearing = (Math.PI / 8)
+        // calculate the x,y of the defined circle
+        var x = pointX + radius * Math.sin(bearing);
+        var y = pointY - radius * Math.cos(bearing);
+
+        ctx.fillRect(pointX, pointY, 5, 5);
+        ctx.beginPath();
+        ctx.moveTo(pointX, pointY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        ctx.font = "12px Arial";
+        ctx.fillText(`Bearing ${toDegrees(bearing)}`,pointX + 10, pointY + 10);
+        return toDegrees(bearing)
+      }
+
+      /**
+       * @func drawLine
+       * @desc Draws the guideline.
+       */
+      
+      function drawLine (lineX1, lineY1, lineX2, lineY2) {
+        const dx = lineX2 - lineX1;
+        const dy = lineY2 - lineY1;
+        const HG = Math.atan2(dy, dx) + Math.PI / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(lineX1, lineY1);
+        ctx.font = "12px Arial";
+        ctx.fillText('start', lineX1, lineY1);
+        ctx.lineTo(lineX2, lineY2);
+        ctx.fillText(`end ${toDegrees(HG)}`, lineX2, lineY2);
+        ctx.stroke();
+
+        return toDegrees(HG);
+      }
+      
+      function Distance (distance, sign) {
+        this.distance = distance;
+        this.sign = sign; // if sign is negative, we're in either Q1 or Q2
+      }
+      
+      /**
+       * @func calcDistanceFromLine
+       * @desc Determine the nearest distance from a particular point to a line.
+       */
+      
+      function calcDistanceFromLine (pointX, pointY, x1, y1, x2, y2) {
+        const numerator = ((y2 - y1) * pointX) - ((x2 - x1) * pointY) + (x2 * y1) - (y2 * x1);
+        const denominator = Math.sqrt(Math.pow((y2 - y1),2) + Math.pow((x2 - x1), 2));
+        const calc = numerator / denominator;
+        const dist = new Distance(calc, Math.sign(numerator));
+        return dist;
+      }
+      
+      // Return a random number between 0 and 500
+      function getRandomNum () {
+        return Math.floor(Math.random() * 500);
+      }
+      
+      /**
+       * toDegrees
+       * @func turn radians into degrees
+       */
+
+      function toDegrees (rad) {
+        return (rad * 180) / Math.PI;
+      }
+
+      /**
+       * @func IEEERemainer
+       * @desc Do a very special kind of modulo.
+       */
+      
+      function IEEERemainer (x, y) {
+        let regularMod = x % y;
+        if (isNaN(regularMod)) { 
+            return new Error('Not a number')
+        }
+        if (regularMod === 0) {
+            if (Math.sign(x) === -1) { 
+                return new Error ('Negative 0')
+            } 
+        } 
+        let alternativeResult;
+        alternativeResult = regularMod - (Math.abs(y) * Math.sign(x)); 
+        if (Math.abs(alternativeResult) === Math.abs(regularMod)) {
+            let divisionResult = x/y;
+            let roundedResult = Math.round(divisionResult);
+            if (Math.abs(roundedResult) > Math.abs(divisionResult)) { 
+                return alternativeResult;
+            } 
+            else { 
+                return regularMod;
+            } 
+        }
+        if (Math.abs(alternativeResult) < Math.abs(regularMod)) {
+            return alternativeResult;
+        } 
+        else {
+            return regularMod; 
+        } 
+      }
+
+      // IEEERemainer(181, 360.0) => -179
+      // IEEERemainer(45, 360.0)  => 45
+
+    </script>
+  </body>
+</html>
