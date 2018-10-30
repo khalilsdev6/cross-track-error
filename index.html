@@ -13,7 +13,20 @@
       const canvas = document.getElementById('canvas');
       canvas.height = 500;
       canvas.width = 500;
+
+      setupCanvasEvents();
+
       const ctx = canvas.getContext("2d");
+      const BB = canvas.getBoundingClientRect();
+      const offsetX = BB.left;
+      const offsetY = BB.top;
+
+      const leftKeyCode = 81;
+      const rightKeyCode = 87;
+
+      let boatTrack = 0;
+      let mouseX;
+      let mouseY;
 
       /**
        * Create some test points to use for the boat
@@ -22,7 +35,7 @@
       
       const test1PointX = getRandomNum(),
             test1PointY = getRandomNum(),
-            lineX1 = 200,
+            lineX1 = 400,
             lineY1 = 137,
             lineX2 = 200,
             lineY2 = 400;
@@ -76,7 +89,9 @@ BH                = ${boatHeading}
         // define random distance between inner/outer rings
         var distFromCenter = radius+Math.random()*(radius*2);
         // define random angle
-        var bearing = (Math.PI / 8)
+        // TODO: user this bearing again ; var bearing = (Math.PI / 8)
+        var bearing = boatTrack; // 0 to Math.PI
+
         // calculate the x,y of the defined circle
         var x = pointX + radius * Math.sin(bearing);
         var y = pointY - radius * Math.cos(bearing);
@@ -178,6 +193,42 @@ BH                = ${boatHeading}
         else {
             return regularMod; 
         } 
+      }
+
+      function setupCanvasEvents () {
+        console.log(canvas)
+        canvas.onmousedown = function(e){
+          console.log('mouse down')
+        }
+        canvas.onmousemove = function(e){
+          mouseX = e.clientX - offsetX;
+          mouseY = e.clientY - offsetY;
+          console.log(mouseX, mouseY);
+          
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          performTestHarness(mouseX, mouseY, lineX1, lineY1, lineX2, lineY2)
+        }
+        canvas.onmouseup = function(e){
+          console.log('mouseup')
+        };
+        canvas.onmouseout = function(e){
+          console.log('mouseout')
+        };
+
+        document.onkeypress = function (e) {
+            e = e || window.event;
+
+          if (e.keyCode === 113) {
+            boatTrack = +(boatTrack - 0.1 % Math.PI).toFixed(12);
+          }
+
+          if (e.keyCode === 119) {
+            boatTrack = +(boatTrack + 0.1 % Math.PI).toFixed(12);
+          }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          performTestHarness(mouseX, mouseY, lineX1, lineY1, lineX2, lineY2)
+        };
       }
 
       // IEEERemainer(181, 360.0) => -179
